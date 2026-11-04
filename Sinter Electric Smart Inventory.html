@@ -1,0 +1,1617 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sinter Electric Smart Inventory</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- QRCode.js for generating QR Codes -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- HTML5-QRCode for Camera Scanning -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#16a34a',
+                            600: '#15803d',
+                            700: '#166534',
+                            900: '#14532d',
+                        },
+                        electric: {
+                            50: '#eff6ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f8fafc;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        #qrReader video {
+            border-radius: 0.5rem;
+            object-fit: cover;
+            width: 100% !important;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col">
+
+    <!-- TOP NAVBAR -->
+    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-electric-500 p-2.5 rounded-lg text-white shadow-sm">
+                    <i class="fa-solid fa-bolt text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base sm:text-lg leading-tight tracking-wide text-white">Sinter Electric Smart Inventory</h1>
+                    <p class="text-xs text-slate-400">Sinter Electric Maintenance & Telegram Sync System</p>
+                </div>
+            </div>
+
+            <!-- Header Action Buttons -->
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <button onclick="openTelegramModal()" class="bg-sky-600 hover:bg-sky-700 text-white px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center space-x-1.5 shadow-sm" title="Pengaturan Bot Telegram">
+                    <i class="fa-brands fa-telegram text-base"></i>
+                    <span class="hidden md:inline">Bot Telegram</span>
+                </button>
+
+                <button onclick="openModal('add')" class="bg-brand-500 hover:bg-brand-600 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center space-x-2 shadow-sm">
+                    <i class="fa-solid fa-plus"></i>
+                    <span class="hidden sm:inline">Tambah Item Baru</span>
+                    <span class="sm:hidden">Tambah</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- NAVIGATION TABS -->
+    <div class="bg-white border-b border-slate-200 shadow-xs sticky top-16 z-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-4 sm:space-x-8 overflow-x-auto">
+            <button onclick="switchTab('inventory')" id="tabBtn-inventory" class="py-3 px-1 text-xs sm:text-sm font-semibold border-b-2 border-brand-500 text-brand-600 flex items-center space-x-2 whitespace-nowrap">
+                <i class="fa-solid fa-boxes-stacked"></i>
+                <span>Inventaris Gudang</span>
+            </button>
+            <button onclick="switchTab('transactions')" id="tabBtn-transactions" class="py-3 px-1 text-xs sm:text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center space-x-2 whitespace-nowrap">
+                <i class="fa-solid fa-right-left"></i>
+                <span>Transaksi Masuk & Keluar</span>
+            </button>
+            <button onclick="switchTab('budgeting')" id="tabBtn-budgeting" class="py-3 px-1 text-xs sm:text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center space-x-2 whitespace-nowrap">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>Budgeting & Forecast</span>
+            </button>
+            <button onclick="switchTab('history')" id="tabBtn-history" class="py-3 px-1 text-xs sm:text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center space-x-2 whitespace-nowrap">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                <span>Log Aktivitas Tim</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+
+        <!-- DASHBOARD SUMMARY CARDS -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Total Nilai Aset</p>
+                    <h3 id="statTotalAsset" class="text-base sm:text-xl font-bold text-slate-800 mt-1">Rp 0</h3>
+                </div>
+                <div class="p-3 bg-blue-50 text-blue-600 rounded-lg">
+                    <i class="fa-solid fa-wallet text-xl"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Pembelian Bulan Ini</p>
+                    <h3 id="statMonthlySpend" class="text-base sm:text-xl font-bold text-brand-600 mt-1">Rp 0</h3>
+                </div>
+                <div class="p-3 bg-brand-50 text-brand-600 rounded-lg">
+                    <i class="fa-solid fa-cart-shopping text-xl"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Stok Menipis (&lt;5)</p>
+                    <h3 id="statLowStock" class="text-base sm:text-xl font-bold text-amber-600 mt-1">0</h3>
+                </div>
+                <div class="p-3 bg-amber-50 text-amber-600 rounded-lg">
+                    <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Total Item Jenis</p>
+                    <h3 id="statTotalItems" class="text-base sm:text-xl font-bold text-purple-600 mt-1">0</h3>
+                </div>
+                <div class="p-3 bg-purple-50 text-purple-600 rounded-lg">
+                    <i class="fa-solid fa-boxes-stacked text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 1: INVENTARIS GUDANG -->
+        <div id="tabContent-inventory" class="tab-content">
+            <!-- CONTROLS & SEARCH BAR -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto flex-grow">
+                    <div class="relative w-full sm:w-72">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="searchInput" oninput="filterData()" placeholder="Cari Qcode, Deskripsi, Locator..." 
+                               class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+
+                    <select id="categoryFilter" onchange="filterData()" class="w-full sm:w-44 py-2 px-3 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        <option value="">Semua Kategori</option>
+                    </select>
+
+                    <select id="locatorFilter" onchange="filterData()" class="w-full sm:w-44 py-2 px-3 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        <option value="">Semua Locator</option>
+                    </select>
+
+                    <label class="flex items-center space-x-2 text-sm text-slate-600 cursor-pointer w-full sm:w-auto select-none">
+                        <input type="checkbox" id="lowStockToggle" onchange="filterData()" class="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500">
+                        <span class="font-medium">Stok Menipis</span>
+                    </label>
+                </div>
+
+                <div class="flex items-center space-x-2 w-full md:w-auto justify-end border-t md:border-t-0 pt-3 md:pt-0 border-slate-100">
+                    <button onclick="exportToCSV()" class="px-3 py-2 border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-lg text-sm font-medium transition flex items-center space-x-1.5" title="Export Spreadsheet CSV">
+                        <i class="fa-solid fa-file-csv text-emerald-600"></i>
+                        <span>Export CSV</span>
+                    </button>
+
+                    <label class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition flex items-center space-x-1.5 cursor-pointer" title="Import CSV">
+                        <i class="fa-solid fa-file-import text-brand-600"></i>
+                        <span>Import</span>
+                        <input type="file" id="csvFileInput" accept=".csv" class="hidden" onchange="importCSV(event)">
+                    </label>
+
+                    <button onclick="confirmResetData()" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Reset Sample Data">
+                        <i class="fa-solid fa-rotate text-sm"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- TABLE CONTAINER -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100/75 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                                <th class="py-3 px-4 text-center">Foto</th>
+                                <th class="py-3 px-4 cursor-pointer hover:bg-slate-200 transition" onclick="sortTable('qcode')">
+                                    QCode <i class="fa-solid fa-sort text-slate-400 ml-1"></i>
+                                </th>
+                                <th class="py-3 px-4 cursor-pointer hover:bg-slate-200 transition" onclick="sortTable('description')">
+                                    Item Description <i class="fa-solid fa-sort text-slate-400 ml-1"></i>
+                                </th>
+                                <th class="py-3 px-4">Kategori</th>
+                                <th class="py-3 px-4 text-right cursor-pointer hover:bg-slate-200 transition" onclick="sortTable('price')">
+                                    Harga Satuan <i class="fa-solid fa-sort text-slate-400 ml-1"></i>
+                                </th>
+                                <th class="py-3 px-4 text-center cursor-pointer hover:bg-slate-200 transition" onclick="sortTable('quantity')">
+                                    Quantity <i class="fa-solid fa-sort text-slate-400 ml-1"></i>
+                                </th>
+                                <th class="py-3 px-4 text-right">Total Nilai</th>
+                                <th class="py-3 px-4 cursor-pointer hover:bg-slate-200 transition" onclick="sortTable('locator')">
+                                    Locator <i class="fa-solid fa-sort text-slate-400 ml-1"></i>
+                                </th>
+                                <th class="py-3 px-4 text-center">QR Code</th>
+                                <th class="py-3 px-4 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventoryTableBody" class="divide-y divide-slate-100 text-sm"></tbody>
+                    </table>
+                </div>
+
+                <div id="emptyState" class="hidden p-8 text-center">
+                    <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-400">
+                        <i class="fa-solid fa-box-open text-2xl"></i>
+                    </div>
+                    <h4 class="font-semibold text-slate-700">Tidak ada item ditemukan</h4>
+                    <p class="text-xs text-slate-400 mt-1">Coba sesuaikan kata kunci pencarian atau filter Anda.</p>
+                </div>
+
+                <div class="bg-slate-50 px-4 py-3 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 gap-2">
+                    <div>
+                        Menampilkan <span id="showingCount" class="font-semibold text-slate-700">0</span> dari <span id="totalCount" class="font-semibold text-slate-700">0</span> item.
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-1.5"></span> Aman (≥5)</span>
+                        <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-amber-500 mr-1.5"></span> Menipis (&lt;5)</span>
+                        <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-red-500 mr-1.5"></span> Habis (0)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: TRANSAKSI MASUK & KELUAR -->
+        <div id="tabContent-transactions" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- TRANSACTION FORM CARD -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 lg:col-span-2">
+                    <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+                        <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                            <i class="fa-solid fa-right-left text-brand-600"></i> Form Input Transaksi Stok
+                        </h3>
+                        <span class="text-xs text-slate-400 font-mono">Real-Time Telegram Broadcast</span>
+                    </div>
+
+                    <form id="transactionForm" onsubmit="submitTransaction(event)" class="space-y-4">
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="flex items-center justify-center space-x-2 p-3 border-2 rounded-xl cursor-pointer transition border-brand-500 bg-brand-50/50 text-brand-800 font-semibold text-sm" id="labelTxIn">
+                                <input type="radio" name="txType" value="MASUK" checked onchange="toggleTxType('MASUK')" class="hidden">
+                                <i class="fa-solid fa-arrow-down text-brand-600"></i>
+                                <span>Barang Masuk</span>
+                            </label>
+                            <label class="flex items-center justify-center space-x-2 p-3 border-2 rounded-xl cursor-pointer transition border-slate-200 bg-white text-slate-600 font-semibold text-sm" id="labelTxOut">
+                                <input type="radio" name="txType" value="KELUAR" onchange="toggleTxType('KELUAR')" class="hidden">
+                                <i class="fa-solid fa-arrow-up text-rose-600"></i>
+                                <span>Barang Keluar</span>
+                            </label>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Pilih Item Barang (Atau Scan QR)</label>
+                            <select id="txItemQcode" required onchange="onSelectTxItem(this.value)" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="">-- Pilih Qcode / Nama Barang --</option>
+                            </select>
+                        </div>
+
+                        <div id="txItemInfo" class="hidden bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-600 flex items-center justify-between gap-3">
+                            <img id="infoItemImg" src="" class="w-12 h-12 rounded object-cover border border-slate-200 shrink-0">
+                            <div class="flex-grow">
+                                <p class="font-semibold text-slate-800" id="infoItemDesc">-</p>
+                                <p class="text-slate-500">Locator: <span id="infoItemLocator" class="font-mono font-medium text-slate-700">-</span></p>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <span class="text-slate-400">Stok Saat Ini:</span>
+                                <p class="text-lg font-bold text-brand-600" id="infoItemStock">0</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Jumlah (Qty)</label>
+                                <input type="number" id="txQuantity" min="1" required placeholder="0" 
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none font-bold">
+                            </div>
+                            <div id="priceContainer">
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Harga Satuan Pembelian (Rp)</label>
+                                <input type="number" id="txUnitPrice" min="0" placeholder="0" 
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none font-semibold">
+                            </div>
+                        </div>
+
+                        <div id="locatorContainer">
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Locator / Rak Tujuan Masuk</label>
+                            <input type="text" id="txLocator" placeholder="Contoh: Substation A-01" 
+                                   class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+
+                        <div id="reasonContainer" class="hidden">
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Tujuan / Alasan Pemakaian (Outgoing)</label>
+                            <input type="text" id="txReason" placeholder="Contoh: Maintenance Overhaul Line 3" 
+                                   class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">PIC (Penanggung Jawab)</label>
+                            <input type="text" id="txPic" required placeholder="Nama teknisi / petugas..." 
+                                   class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+
+                        <div class="flex justify-end pt-2">
+                            <button type="submit" class="w-full sm:w-auto px-6 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-sm font-semibold transition shadow-sm flex items-center justify-center space-x-2">
+                                <i class="fa-solid fa-paper-plane"></i>
+                                <span>Kirim Transaksi & Notif Telegram</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- QR CODE CAMERA SCANNER WIDGET -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col">
+                    <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+                        <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                            <i class="fa-solid fa-qrcode text-electric-600"></i> QR Code Scanner
+                        </h3>
+                        <button type="button" id="btnToggleScan" onclick="toggleQrScanner()" class="px-3 py-1.5 bg-electric-500 hover:bg-electric-600 text-white rounded-lg text-xs font-semibold transition flex items-center space-x-1">
+                            <i class="fa-solid fa-camera"></i>
+                            <span id="scanBtnText">Buka Kamera</span>
+                        </button>
+                    </div>
+
+                    <p class="text-xs text-slate-500 mb-4">Gunakan kamera perangkat untuk melakukan scan label QR Code pada item sparepart agar form transaksi ter-auto-fill secara instan.</p>
+
+                    <div id="scannerContainer" class="hidden mb-4 flex-grow">
+                        <div id="qrReader" class="w-full bg-slate-900 rounded-lg overflow-hidden min-h-[220px]"></div>
+                        <p class="text-[11px] text-slate-400 text-center mt-2">Arahkan kamera ke QR Code label barang...</p>
+                    </div>
+
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 mt-auto">
+                        <h4 class="font-semibold text-slate-700 text-xs uppercase mb-2">Panduan Cepat Scanner:</h4>
+                        <ul class="text-xs text-slate-600 space-y-1.5 list-disc pl-4">
+                            <li>Pastikan izin kamera browser aktif.</li>
+                            <li>Arahkan QR Code dengan jarak 15-30 cm.</li>
+                            <li>Data QCode akan otomatis mengisi form transaksi.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: BUDGETING & FORECAST -->
+        <div id="tabContent-budgeting" class="tab-content hidden space-y-6">
+            <!-- RESTOCK FORECAST SECTION -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 pb-4 border-b border-slate-100">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                            <i class="fa-solid fa-wand-magic-sparkles text-purple-600"></i> Restock Forecast (Rekomendasi Pengadaan)
+                        </h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Daftar item pemeliharaan yang memerlukan re-order karena stok di bawah buffer minimal (&lt; 5 pcs).</p>
+                    </div>
+                    <div>
+                        <button onclick="sendForecastToTelegram()" class="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold rounded-lg transition flex items-center space-x-2 shadow-sm">
+                            <i class="fa-brands fa-telegram text-sm"></i>
+                            <span>Kirim Forecast ke Telegram</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100/75 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase">
+                                <th class="py-3 px-4">QCode</th>
+                                <th class="py-3 px-4">Item Description</th>
+                                <th class="py-3 px-4">Kategori</th>
+                                <th class="py-3 px-4 text-center">Stok Saat Ini</th>
+                                <th class="py-3 px-4 text-center text-purple-700 font-bold">Restock Quantity (Disarankan)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="forecastTableBody" class="divide-y divide-slate-100 text-sm"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- MONTHLY BUDGETING RECAP SECTION -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 pb-4 border-b border-slate-100">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                            <i class="fa-solid fa-receipt text-brand-600"></i> Rekapan Budgeting Pembelian Bulanan
+                        </h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Akumulasi realisasi pengeluaran pembelian barang masuk per bulan.</p>
+                    </div>
+                    <div>
+                        <input type="month" id="budgetMonthFilter" onchange="renderBudgetingSummary()" class="py-1.5 px-3 border border-slate-300 rounded-lg text-sm bg-white font-medium">
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100/75 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase">
+                                <th class="py-3 px-4">QCode</th>
+                                <th class="py-3 px-4">Nama Item</th>
+                                <th class="py-3 px-4 text-center">Total Item Masuk</th>
+                                <th class="py-3 px-4 text-right">Harga Satuan Terakhir</th>
+                                <th class="py-3 px-4 text-right">Total Pengeluaran</th>
+                            </tr>
+                        </thead>
+                        <tbody id="budgetSummaryTableBody" class="divide-y divide-slate-100 text-sm"></tbody>
+                        <tfoot>
+                            <tr class="bg-brand-50/60 font-bold text-slate-800 text-sm border-t-2 border-brand-200">
+                                <td colspan="2" class="py-3 px-4 text-right">Total Realisasi Budget Bulan Ini:</td>
+                                <td id="monthlyTotalQty" class="py-3 px-4 text-center text-brand-700">0 pcs</td>
+                                <td></td>
+                                <td id="monthlyTotalSpend" class="py-3 px-4 text-right text-brand-700">Rp 0</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: LOG AKTIVITAS -->
+        <div id="tabContent-history" class="tab-content hidden">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div class="flex items-center space-x-2 w-full sm:w-auto">
+                        <select id="logFilterType" onchange="renderHistoryLogs()" class="py-2 px-3 bg-white border border-slate-300 rounded-lg text-sm">
+                            <option value="">Semua Jenis Transaksi</option>
+                            <option value="MASUK">Barang Masuk</option>
+                            <option value="KELUAR">Barang Keluar</option>
+                        </select>
+                        <input type="text" id="logSearchInput" oninput="renderHistoryLogs()" placeholder="Cari Qcode, PIC, Alasan..." class="py-2 px-3 bg-white border border-slate-300 rounded-lg text-sm w-full sm:w-64">
+                    </div>
+                    <button onclick="clearHistory()" class="text-xs text-red-600 hover:underline font-semibold">Hapus Riwayat Log</button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100/75 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase">
+                                <th class="py-3 px-4">Foto</th>
+                                <th class="py-3 px-4">ID / Waktu</th>
+                                <th class="py-3 px-4 text-center">Tipe</th>
+                                <th class="py-3 px-4">QCode & Item</th>
+                                <th class="py-3 px-4 text-center">Qty</th>
+                                <th class="py-3 px-4 text-right">Harga Satuan</th>
+                                <th class="py-3 px-4 text-right">Total Nilai</th>
+                                <th class="py-3 px-4">Locator / Tujuan</th>
+                                <th class="py-3 px-4">PIC</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody" class="divide-y divide-slate-100 text-sm"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-white border-t border-slate-200 mt-auto py-4 text-center text-xs text-slate-400">
+        <div class="max-w-7xl mx-auto px-4">
+            Sinter Electric Smart Inventory &copy; Sinter Electric Maintenance Workspace
+        </div>
+    </footer>
+
+    <!-- MODAL ADD / EDIT ITEM -->
+    <div id="itemModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 overflow-hidden transform scale-95 transition-transform duration-200 max-h-[90vh] flex flex-col" id="modalCard">
+            <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center shrink-0">
+                <h3 id="modalTitle" class="font-bold text-base flex items-center gap-2">
+                    <i class="fa-solid fa-box text-brand-500"></i> Tambah Item Baru
+                </h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <form id="itemForm" onsubmit="saveItem(event)" class="p-6 space-y-4 overflow-y-auto">
+                <input type="hidden" id="editIndex" value="-1">
+                
+                <!-- PHOTO UPLOAD -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Foto Item Barang</label>
+                    <div class="flex items-center space-x-3">
+                        <div class="w-16 h-16 rounded-lg border border-slate-300 bg-slate-100 flex items-center justify-center overflow-hidden shrink-0">
+                            <img id="itemImagePreview" src="https://placehold.co/100x100/e2e8f0/64748b?text=Item" class="w-full h-full object-cover">
+                        </div>
+                        <input type="file" id="inputImageFile" accept="image/*" onchange="previewImageFile(event)" class="text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 cursor-pointer">
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-xs font-semibold text-slate-600 uppercase">QCode (Kode Unik)</label>
+                        <button type="button" onclick="generateRandomQCode()" class="text-xs text-brand-600 hover:underline font-semibold">Auto-Generate</button>
+                    </div>
+                    <input type="text" id="inputQcode" required placeholder="Contoh: QC-SE-1001" 
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none uppercase font-mono">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Item Description</label>
+                    <textarea id="inputDescription" required rows="2" placeholder="Deskripsi spesifikasi sparepart..." 
+                              class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Kategori</label>
+                        <input type="text" id="inputCategory" placeholder="Electrical" required
+                               class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Harga Satuan (Rp)</label>
+                        <input type="number" id="inputPrice" min="0" required placeholder="0" 
+                               class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none font-semibold">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Quantity Awal</label>
+                        <input type="number" id="inputQuantity" min="0" required placeholder="0" 
+                               class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Locator / Rak</label>
+                        <input type="text" id="inputLocator" required placeholder="Substation A-01" 
+                               class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 text-sm font-medium hover:bg-slate-50 transition">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-sm font-medium transition shadow-sm">Simpan Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL QR DISPLAY -->
+    <div id="qrModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 overflow-hidden transform scale-95 transition-transform duration-200 text-center p-6" id="qrModalCard">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-slate-800 text-base" id="qrModalTitle">QR Code Label</h3>
+                <button onclick="closeQrModal()" class="text-slate-400 hover:text-slate-700 transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-center justify-center mx-auto mb-4" style="min-height: 200px;">
+                <div id="qrcodeCanvas"></div>
+            </div>
+
+            <p class="font-mono font-bold text-slate-800 text-lg mb-1" id="qrCodeText">QC-SE-XXXX</p>
+            <p class="text-xs text-slate-500 mb-6" id="qrDescText">Item Description</p>
+
+            <div class="flex space-x-2">
+                <button onclick="downloadQrCode()" class="w-full py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center space-x-1.5">
+                    <i class="fa-solid fa-download"></i>
+                    <span>Download QR</span>
+                </button>
+                <button onclick="window.print()" class="w-full py-2 border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold transition flex items-center justify-center space-x-1.5">
+                    <i class="fa-solid fa-print"></i>
+                    <span>Cetak Label</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL TELEGRAM SETTINGS -->
+    <div id="telegramModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 overflow-hidden transform scale-95 transition-transform duration-200 flex flex-col" id="telegramModalCard">
+            <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center shrink-0">
+                <h3 class="font-bold text-base flex items-center gap-2">
+                    <i class="fa-brands fa-telegram text-sky-400"></i> Konfigurasi Telegram Bot
+                </h3>
+                <button onclick="closeTelegramModal()" class="text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <p class="text-xs text-slate-500">Masukkan Telegram Bot Token dan Chat ID Group Anda agar sistem dapat mengirim notifikasi transaksi secara otomatis.</p>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Telegram Bot Token</label>
+                    <input type="text" id="inputTgToken" placeholder="Contoh: 123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ" 
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Telegram Chat ID Group</label>
+                    <input type="text" id="inputTgChatId" placeholder="Contoh: -1001234567890" 
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                </div>
+                <div class="flex items-center justify-between pt-2">
+                    <button type="button" onclick="testTelegramConnection()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition">
+                        Kirim Test Pesan
+                    </button>
+                    <div class="flex space-x-2">
+                        <button type="button" onclick="closeTelegramModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 text-sm font-medium hover:bg-slate-50 transition">Batal</button>
+                        <button type="button" onclick="saveTelegramConfig()" class="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-medium transition shadow-sm">Simpan</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2 pointer-events-none"></div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // INITIAL INDUSTRIAL SAMPLE DATA
+        const initialInventory = [
+            { qcode: 'QC-SE-001', description: '7500kW Main Blower Motor High Voltage', category: 'Electrical', price: 45000000, quantity: 2, locator: 'Substation A-01', image: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=150&auto=format&fit=crop&q=80', lastUpdated: '2026-11-04 08:30' },
+            { qcode: 'QC-SE-002', description: 'Dry-Type Transformer 1000kVA', category: 'Electrical', price: 120000000, quantity: 1, locator: 'Main Yard T-02', image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=150&auto=format&fit=crop&q=80', lastUpdated: '2026-11-04 09:15' },
+            { qcode: 'QC-SE-003', description: 'Electrostatic Precipitator Controller Unit', category: 'Control System', price: 28500000, quantity: 4, locator: 'Panel Room P-03', image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=150&auto=format&fit=crop&q=80', lastUpdated: '2026-11-03 14:20' },
+            { qcode: 'QC-SE-004', description: 'Heavy Duty Limit Switch OMRON D4V', category: 'Sensor', price: 750000, quantity: 12, locator: 'Rack B1-R02-S1', image: 'https://images.unsplash.com/photo-1586864387967-d02ef85d93e8?w=150&auto=format&fit=crop&q=80', lastUpdated: '2026-11-02 11:00' },
+            { qcode: 'QC-SE-005', description: 'Schneider MCCB 400A 3P Compact NSX', category: 'Switchgear', price: 4500000, quantity: 3, locator: 'Panel Room P-01', image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=150&auto=format&fit=crop&q=80', lastUpdated: '2026-11-04 07:45' },
+            { qcode: 'QC-SE-006', description: 'Industrial IGBT Power Module SKM75GB128D', category: 'Electronics', price: 1850000, quantity: 0, locator: 'Rack C2-R01-S3', image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=150&auto=format&fit=crop&q=80', lastUpdated: '2026-11-01 16:50' }
+        ];
+
+        const initialLogs = [
+            { id: 'TX-9001', type: 'MASUK', qcode: 'QC-SE-001', description: '7500kW Main Blower Motor High Voltage', qty: 1, price: 45000000, locator: 'Substation A-01', pic: 'Ir. Hendra', image: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=150&auto=format&fit=crop&q=80', time: '2026-11-04 08:30' },
+            { id: 'TX-9002', type: 'KELUAR', qcode: 'QC-SE-004', description: 'Heavy Duty Limit Switch OMRON D4V', qty: 2, price: 750000, locator: 'Line Conveyor B Overhaul', pic: 'Rian Teknisi', image: 'https://images.unsplash.com/photo-1586864387967-d02ef85d93e8?w=150&auto=format&fit=crop&q=80', time: '2026-11-04 09:15' }
+        ];
+
+        let inventory = [];
+        let activityLogs = [];
+        let telegramConfig = { token: '', chatId: '' };
+        let html5QrCodeScanner = null;
+        let currentSortColumn = '';
+        let currentSortDirection = 'asc';
+        let activeImageBase64 = '';
+
+        window.onload = function () {
+            loadLocalStorageData();
+            initCurrentMonthFilter();
+            renderTable();
+            updateDashboardStats();
+            populateDropdowns();
+            renderForecastTable();
+            renderBudgetingSummary();
+            renderHistoryLogs();
+
+            // Real-time synchronization across browser tabs
+            window.addEventListener('storage', (e) => {
+                if (['sinter_inv_data_v1', 'sinter_inv_logs_v1', 'sinter_inv_tg_v1'].includes(e.key)) {
+                    loadLocalStorageData();
+                    renderTable();
+                    updateDashboardStats();
+                    populateDropdowns();
+                    renderForecastTable();
+                    renderBudgetingSummary();
+                    renderHistoryLogs();
+                }
+            });
+        };
+
+        function loadLocalStorageData() {
+            const savedData = localStorage.getItem('sinter_inv_data_v1');
+            inventory = savedData ? JSON.parse(savedData) : [...initialInventory];
+            if(!savedData) saveToLocalStorage();
+
+            const savedLogs = localStorage.getItem('sinter_inv_logs_v1');
+            activityLogs = savedLogs ? JSON.parse(savedLogs) : [...initialLogs];
+            if(!savedLogs) saveLogsToLocalStorage();
+
+            const savedTg = localStorage.getItem('sinter_inv_tg_v1');
+            telegramConfig = savedTg ? JSON.parse(savedTg) : { token: '', chatId: '' };
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('sinter_inv_data_v1', JSON.stringify(inventory));
+        }
+
+        function saveLogsToLocalStorage() {
+            localStorage.setItem('sinter_inv_logs_v1', JSON.stringify(activityLogs));
+        }
+
+        function saveTelegramConfig() {
+            telegramConfig.token = document.getElementById('inputTgToken').value.trim();
+            telegramConfig.chatId = document.getElementById('inputTgChatId').value.trim();
+            localStorage.setItem('sinter_inv_tg_v1', JSON.stringify(telegramConfig));
+            closeTelegramModal();
+            showToast('Konfigurasi Telegram berhasil disimpan!', 'success');
+        }
+
+        function openTelegramModal() {
+            document.getElementById('inputTgToken').value = telegramConfig.token || '';
+            document.getElementById('inputTgChatId').value = telegramConfig.chatId || '';
+            const modal = document.getElementById('telegramModal');
+            const card = document.getElementById('telegramModalCard');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                card.classList.remove('scale-95');
+                card.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeTelegramModal() {
+            const modal = document.getElementById('telegramModal');
+            const card = document.getElementById('telegramModalCard');
+            card.classList.remove('scale-100');
+            card.classList.add('scale-95');
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 200);
+        }
+
+        async function sendTelegramMessage(message) {
+            if (!telegramConfig.token || !telegramConfig.chatId) {
+                return;
+            }
+            try {
+                const url = `https://api.telegram.org/bot${telegramConfig.token}/sendMessage`;
+                await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: telegramConfig.chatId,
+                        text: message,
+                        parse_mode: 'HTML'
+                    })
+                });
+            } catch (err) {
+                console.error("Telegram connection error:", err);
+            }
+        }
+
+        async function testTelegramConnection() {
+            const token = document.getElementById('inputTgToken').value.trim();
+            const chatId = document.getElementById('inputTgChatId').value.trim();
+            if (!token || !chatId) {
+                showToast('Token dan Chat ID Telegram wajib diisi!', 'error');
+                return;
+            }
+            try {
+                const url = `https://api.telegram.org/bot${token}/sendMessage`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        text: "⚡ <b>Sinter Electric Smart Inventory Connected!</b>\nNotifikasi real-time aktif.",
+                        parse_mode: 'HTML'
+                    })
+                });
+                const data = await response.json();
+                if (data.ok) {
+                    showToast('Pesan test Telegram berhasil dikirim!', 'success');
+                } else {
+                    showToast('Gagal: ' + data.description, 'error');
+                }
+            } catch (err) {
+                showToast('Koneksi gagal: ' + err.message, 'error');
+            }
+        }
+
+        function initCurrentMonthFilter() {
+            const now = new Date();
+            const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            document.getElementById('budgetMonthFilter').value = ym;
+        }
+
+        // TAB SWITCHING
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tabContent-${tabName}`).classList.remove('hidden');
+
+            document.querySelectorAll('[id^="tabBtn-"]').forEach(btn => {
+                btn.className = "py-3 px-1 text-xs sm:text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center space-x-2 whitespace-nowrap";
+            });
+
+            const activeBtn = document.getElementById(`tabBtn-${tabName}`);
+            activeBtn.className = "py-3 px-1 text-xs sm:text-sm font-semibold border-b-2 border-brand-500 text-brand-600 flex items-center space-x-2 whitespace-nowrap";
+
+            if (tabName === 'transactions') {
+                populateTransactionDropdown();
+            } else if (tabName === 'budgeting') {
+                renderForecastTable();
+                renderBudgetingSummary();
+            }
+        }
+
+        // RENDER INVENTORY TABLE
+        function renderTable() {
+            const tbody = document.getElementById('inventoryTableBody');
+            const searchVal = document.getElementById('searchInput').value.toLowerCase().trim();
+            const categoryVal = document.getElementById('categoryFilter').value;
+            const locatorVal = document.getElementById('locatorFilter').value;
+            const lowStockOnly = document.getElementById('lowStockToggle').checked;
+
+            tbody.innerHTML = '';
+
+            let filtered = inventory.filter(item => {
+                const matchesSearch = item.qcode.toLowerCase().includes(searchVal) ||
+                                      item.description.toLowerCase().includes(searchVal) ||
+                                      item.locator.toLowerCase().includes(searchVal) ||
+                                      item.category.toLowerCase().includes(searchVal);
+                
+                const matchesCategory = categoryVal === '' || item.category === categoryVal;
+                const matchesLocator = locatorVal === '' || item.locator === locatorVal;
+                const matchesLowStock = !lowStockOnly || item.quantity < 5;
+
+                return matchesSearch && matchesCategory && matchesLocator && matchesLowStock;
+            });
+
+            document.getElementById('showingCount').innerText = filtered.length;
+            document.getElementById('totalCount').innerText = inventory.length;
+
+            if (filtered.length === 0) {
+                document.getElementById('emptyState').classList.remove('hidden');
+            } else {
+                document.getElementById('emptyState').classList.add('hidden');
+            }
+
+            filtered.forEach((item) => {
+                const originalIndex = inventory.findIndex(i => i.qcode === item.qcode);
+                let qtyBadgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-200';
+                if (item.quantity === 0) qtyBadgeClass = 'bg-red-100 text-red-800 border-red-200 font-bold';
+                else if (item.quantity < 5) qtyBadgeClass = 'bg-amber-100 text-amber-800 border-amber-200 font-semibold';
+
+                const totalValue = item.quantity * (item.price || 0);
+                const imgSrc = item.image || 'https://placehold.co/100x100/e2e8f0/64748b?text=Item';
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50/80 transition';
+                tr.innerHTML = `
+                    <td class="py-3 px-4 text-center">
+                        <img src="${imgSrc}" class="w-10 h-10 rounded-lg object-cover border border-slate-200 mx-auto shadow-xs" onerror="this.src='https://placehold.co/100x100/e2e8f0/64748b?text=Item'">
+                    </td>
+                    <td class="py-3 px-4 font-mono font-bold text-slate-800 text-xs">${escapeHtml(item.qcode)}</td>
+                    <td class="py-3 px-4 font-medium text-slate-800">${escapeHtml(item.description)}</td>
+                    <td class="py-3 px-4 text-xs font-medium text-slate-600">${escapeHtml(item.category)}</td>
+                    <td class="py-3 px-4 text-right font-mono font-semibold text-slate-700">${formatIDR(item.price || 0)}</td>
+                    <td class="py-3 px-4 text-center">
+                        <span class="px-2.5 py-1 rounded-full text-xs border ${qtyBadgeClass} min-w-[45px] text-center inline-block">
+                            ${item.quantity}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 text-right font-mono font-bold text-slate-800">${formatIDR(totalValue)}</td>
+                    <td class="py-3 px-4 text-xs text-slate-600 font-medium">${escapeHtml(item.locator)}</td>
+                    <td class="py-3 px-4 text-center">
+                        <button onclick="showQrModal('${item.qcode}')" class="p-1.5 text-electric-600 hover:bg-electric-50 rounded-lg transition" title="Lihat QR Code">
+                            <i class="fa-solid fa-qrcode text-base"></i>
+                        </button>
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                        <div class="flex items-center justify-center space-x-1">
+                            <button onclick="openModal('edit', ${originalIndex})" class="p-1.5 text-slate-500 hover:text-brand-600 hover:bg-brand-50 rounded transition" title="Edit Item">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button onclick="deleteItem(${originalIndex})" class="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded transition" title="Hapus Item">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // QR CODE MODAL GENERATOR
+        function showQrModal(qcode) {
+            const item = inventory.find(i => i.qcode === qcode);
+            if (!item) return;
+
+            document.getElementById('qrCodeText').innerText = item.qcode;
+            document.getElementById('qrDescText').innerText = item.description;
+
+            const qrContainer = document.getElementById('qrcodeCanvas');
+            qrContainer.innerHTML = '';
+
+            new QRCode(qrContainer, {
+                text: item.qcode,
+                width: 160,
+                height: 160,
+                colorDark : "#0f172a",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+
+            const modal = document.getElementById('qrModal');
+            const card = document.getElementById('qrModalCard');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                card.classList.remove('scale-95');
+                card.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeQrModal() {
+            const modal = document.getElementById('qrModal');
+            const card = document.getElementById('qrModalCard');
+            card.classList.remove('scale-100');
+            card.classList.add('scale-95');
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 200);
+        }
+
+        function downloadQrCode() {
+            const qrCanvas = document.querySelector('#qrcodeCanvas canvas');
+            if (qrCanvas) {
+                const imageURI = qrCanvas.toDataURL("image/png");
+                const link = document.createElement('a');
+                link.download = `QR_${document.getElementById('qrCodeText').innerText}.png`;
+                link.href = imageURI;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
+        // CAMERA QR SCANNER
+        function toggleQrScanner() {
+            const container = document.getElementById('scannerContainer');
+            const btnText = document.getElementById('scanBtnText');
+
+            if (container.classList.contains('hidden')) {
+                container.classList.remove('hidden');
+                btnText.innerText = "Tutup Kamera";
+                startQrScanner();
+            } else {
+                stopQrScanner();
+                container.classList.add('hidden');
+                btnText.innerText = "Buka Kamera";
+            }
+        }
+
+        function startQrScanner() {
+            if (html5QrCodeScanner) {
+                stopQrScanner();
+            }
+
+            html5QrCodeScanner = new Html5Qrcode("qrReader");
+            const config = { fps: 10, qrbox: { width: 200, height: 200 } };
+
+            html5QrCodeScanner.start(
+                { facingMode: "environment" }, 
+                config, 
+                onScanSuccess, 
+                onScanFailure
+            ).catch(err => {
+                showToast("Gagal mengakses kamera: " + err, "error");
+                stopQrScanner();
+            });
+        }
+
+        function stopQrScanner() {
+            if (html5QrCodeScanner) {
+                html5QrCodeScanner.stop().then(() => {
+                    html5QrCodeScanner.clear();
+                    html5QrCodeScanner = null;
+                }).catch(err => console.log(err));
+            }
+            const container = document.getElementById('scannerContainer');
+            if (container) container.classList.add('hidden');
+            const btnText = document.getElementById('scanBtnText');
+            if (btnText) btnText.innerText = "Buka Kamera";
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            const matchedItem = inventory.find(i => i.qcode.toUpperCase() === decodedText.toUpperCase());
+            if (matchedItem) {
+                document.getElementById('txItemQcode').value = matchedItem.qcode;
+                onSelectTxItem(matchedItem.qcode);
+                showToast(`QR Code Terdeteksi: ${matchedItem.qcode}`, 'success');
+                stopQrScanner();
+            } else {
+                showToast(`QCode "${decodedText}" tidak ditemukan di master inventory!`, 'error');
+            }
+        }
+
+        function onScanFailure(error) {
+            // Ignore scan frame misses
+        }
+
+        // UPDATE DASHBOARD STATS
+        function updateDashboardStats() {
+            const totalAsset = inventory.reduce((sum, item) => sum + (item.quantity * (item.price || 0)), 0);
+            document.getElementById('statTotalAsset').innerText = formatIDR(totalAsset);
+
+            const now = new Date();
+            const currentYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            const monthlySpend = activityLogs
+                .filter(log => log.type === 'MASUK' && log.time.startsWith(currentYM))
+                .reduce((sum, log) => sum + (log.qty * (log.price || 0)), 0);
+            document.getElementById('statMonthlySpend').innerText = formatIDR(monthlySpend);
+
+            const lowStockCount = inventory.filter(i => i.quantity < 5).length;
+            document.getElementById('statLowStock').innerText = lowStockCount;
+            document.getElementById('statTotalItems').innerText = inventory.length;
+        }
+
+        // RESTOCK FORECAST & TELEGRAM
+        function renderForecastTable() {
+            const tbody = document.getElementById('forecastTableBody');
+            tbody.innerHTML = '';
+
+            const lowStockItems = inventory.filter(i => i.quantity < 5);
+
+            if (lowStockItems.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400 text-xs">Seluruh stok sparepart dalam kondisi aman (≥ 5 pcs).</td></tr>`;
+            } else {
+                lowStockItems.forEach(item => {
+                    const restockQty = Math.max(10, 15 - item.quantity);
+
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-slate-50 transition';
+                    tr.innerHTML = `
+                        <td class="py-3 px-4 font-mono font-bold text-xs text-slate-800">${escapeHtml(item.qcode)}</td>
+                        <td class="py-3 px-4 font-medium text-slate-800">${escapeHtml(item.description)}</td>
+                        <td class="py-3 px-4 text-xs text-slate-600">${escapeHtml(item.category)}</td>
+                        <td class="py-3 px-4 text-center font-bold text-amber-600">${item.quantity} pcs</td>
+                        <td class="py-3 px-4 text-center font-bold text-purple-700 bg-purple-50/50">${restockQty} pcs</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        async function sendForecastToTelegram() {
+            const lowStockItems = inventory.filter(i => i.quantity < 5);
+            if (lowStockItems.length === 0) {
+                showToast('Tidak ada item yang memerlukan restock saat ini.', 'info');
+                return;
+            }
+
+            let msg = `⚡ <b>FORECAST PENGADAAN SINTER ELECTRIC</b>\n`;
+            msg += `<i>Daftar sparepart stok menipis (&lt;5 pcs):</i>\n\n`;
+
+            lowStockItems.forEach((item, idx) => {
+                const restockQty = Math.max(10, 15 - item.quantity);
+                msg += `${idx + 1}. <b>${item.qcode}</b> - ${item.description}\n`;
+                msg += `   • Stok: <b>${item.quantity} pcs</b> | Rekomendasi: <b>+${restockQty} pcs</b>\n\n`;
+            });
+
+            msg += `Mohon segera diproses oleh tim Purchasing. Terima kasih!`;
+
+            await sendTelegramMessage(msg);
+            showToast('Laporan Forecast berhasil dikirim ke Telegram Group!', 'success');
+        }
+
+        function renderBudgetingSummary() {
+            const tbody = document.getElementById('budgetSummaryTableBody');
+            const selectedYM = document.getElementById('budgetMonthFilter').value;
+            tbody.innerHTML = '';
+
+            const incomingLogs = activityLogs.filter(log => log.type === 'MASUK' && log.time.startsWith(selectedYM));
+
+            const grouped = {};
+            incomingLogs.forEach(log => {
+                if (!grouped[log.qcode]) {
+                    grouped[log.qcode] = {
+                        qcode: log.qcode,
+                        description: log.description,
+                        totalQty: 0,
+                        lastPrice: log.price || 0,
+                        totalSpend: 0
+                    };
+                }
+                grouped[log.qcode].totalQty += log.qty;
+                grouped[log.qcode].totalSpend += (log.qty * (log.price || 0));
+                grouped[log.qcode].lastPrice = log.price || grouped[log.qcode].lastPrice;
+            });
+
+            const items = Object.values(grouped);
+            let monthQty = 0;
+            let monthSpend = 0;
+
+            if (items.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400 text-xs">Belum ada realisasi pembelian di bulan ${selectedYM}.</td></tr>`;
+            } else {
+                items.forEach(item => {
+                    monthQty += item.totalQty;
+                    monthSpend += item.totalSpend;
+
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-slate-50 transition';
+                    tr.innerHTML = `
+                        <td class="py-3 px-4 font-mono font-bold text-xs text-slate-800">${escapeHtml(item.qcode)}</td>
+                        <td class="py-3 px-4 font-medium text-slate-800">${escapeHtml(item.description)}</td>
+                        <td class="py-3 px-4 text-center font-bold text-brand-700">${item.totalQty} pcs</td>
+                        <td class="py-3 px-4 text-right font-mono text-slate-600">${formatIDR(item.lastPrice)}</td>
+                        <td class="py-3 px-4 text-right font-mono font-bold text-slate-800">${formatIDR(item.totalSpend)}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            document.getElementById('monthlyTotalQty').innerText = `${monthQty} pcs`;
+            document.getElementById('monthlyTotalSpend').innerText = formatIDR(monthSpend);
+        }
+
+        function renderHistoryLogs() {
+            const tbody = document.getElementById('historyTableBody');
+            const filterType = document.getElementById('logFilterType').value;
+            const searchVal = document.getElementById('logSearchInput').value.toLowerCase().trim();
+
+            tbody.innerHTML = '';
+
+            let filteredLogs = activityLogs.filter(log => {
+                const matchType = filterType === '' || log.type === filterType;
+                const matchSearch = log.qcode.toLowerCase().includes(searchVal) ||
+                                    log.description.toLowerCase().includes(searchVal) ||
+                                    log.pic.toLowerCase().includes(searchVal) ||
+                                    log.locator.toLowerCase().includes(searchVal);
+                return matchType && matchSearch;
+            });
+
+            if (filteredLogs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400 text-xs">Tidak ada riwayat aktivitas ditemukan.</td></tr>`;
+                return;
+            }
+
+            filteredLogs.forEach(log => {
+                const isIn = log.type === 'MASUK';
+                const badgeClass = isIn ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-rose-100 text-rose-800 border-rose-300';
+                const totalValue = log.qty * (log.price || 0);
+                const imgSrc = log.image || 'https://placehold.co/100x100/e2e8f0/64748b?text=Item';
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition text-xs';
+                tr.innerHTML = `
+                    <td class="py-3 px-4 text-center">
+                        <img src="${imgSrc}" class="w-8 h-8 rounded object-cover border border-slate-200 mx-auto" onerror="this.src='https://placehold.co/100x100/e2e8f0/64748b?text=Item'">
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="font-mono font-bold text-slate-700 block">${log.id}</span>
+                        <span class="text-[10px] text-slate-400 font-mono">${log.time}</span>
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                        <span class="px-2 py-0.5 rounded-full font-bold border ${badgeClass}">
+                            ${log.type}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="font-mono font-bold text-slate-800 block">${escapeHtml(log.qcode)}</span>
+                        <span class="text-slate-600">${escapeHtml(log.description)}</span>
+                    </td>
+                    <td class="py-3 px-4 text-center font-bold text-slate-800">${log.qty}</td>
+                    <td class="py-3 px-4 text-right font-mono">${formatIDR(log.price || 0)}</td>
+                    <td class="py-3 px-4 text-right font-mono font-bold">${formatIDR(totalValue)}</td>
+                    <td class="py-3 px-4 text-slate-600">${escapeHtml(log.locator)}</td>
+                    <td class="py-3 px-4 font-semibold text-slate-700">${escapeHtml(log.pic)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // TRANSACTIONS HANDLING
+        function populateTransactionDropdown() {
+            const select = document.getElementById('txItemQcode');
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">-- Pilih Qcode / Nama Barang --</option>';
+            inventory.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.qcode;
+                opt.innerText = `${item.qcode} - ${item.description} (Stok: ${item.quantity})`;
+                if (item.qcode === currentVal) opt.selected = true;
+                select.appendChild(opt);
+            });
+        }
+
+        function toggleTxType(type) {
+            const radioIn = document.querySelector('input[name="txType"][value="MASUK"]');
+            const radioOut = document.querySelector('input[name="txType"][value="KELUAR"]');
+            const labelIn = document.getElementById('labelTxIn');
+            const labelOut = document.getElementById('labelTxOut');
+            const priceContainer = document.getElementById('priceContainer');
+            const locatorContainer = document.getElementById('locatorContainer');
+            const reasonContainer = document.getElementById('reasonContainer');
+
+            if (type === 'MASUK') {
+                radioIn.checked = true;
+                labelIn.className = "flex items-center justify-center space-x-2 p-3 border-2 rounded-xl cursor-pointer transition border-brand-500 bg-brand-50/50 text-brand-800 font-semibold text-sm";
+                labelOut.className = "flex items-center justify-center space-x-2 p-3 border-2 rounded-xl cursor-pointer transition border-slate-200 bg-white text-slate-600 font-semibold text-sm";
+                priceContainer.style.display = 'block';
+                locatorContainer.style.display = 'block';
+                reasonContainer.classList.add('hidden');
+            } else {
+                radioOut.checked = true;
+                labelOut.className = "flex items-center justify-center space-x-2 p-3 border-2 rounded-xl cursor-pointer transition border-rose-500 bg-rose-50/50 text-rose-800 font-semibold text-sm";
+                labelIn.className = "flex items-center justify-center space-x-2 p-3 border-2 rounded-xl cursor-pointer transition border-slate-200 bg-white text-slate-600 font-semibold text-sm";
+                priceContainer.style.display = 'none';
+                locatorContainer.style.display = 'none';
+                reasonContainer.classList.remove('hidden');
+            }
+        }
+
+        function onSelectTxItem(qcode) {
+            const infoBox = document.getElementById('txItemInfo');
+            if (!qcode) {
+                infoBox.classList.add('hidden');
+                return;
+            }
+
+            const item = inventory.find(i => i.qcode === qcode);
+            if (item) {
+                document.getElementById('infoItemDesc').innerText = item.description;
+                document.getElementById('infoItemLocator').innerText = item.locator;
+                document.getElementById('infoItemStock').innerText = item.quantity;
+                document.getElementById('infoItemImg').src = item.image || 'https://placehold.co/100x100/e2e8f0/64748b?text=Item';
+                document.getElementById('txUnitPrice').value = item.price || 0;
+                document.getElementById('txLocator').value = item.locator;
+                infoBox.classList.remove('hidden');
+            }
+        }
+
+        function submitTransaction(event) {
+            event.preventDefault();
+
+            const txType = document.querySelector('input[name="txType"]:checked').value;
+            const qcode = document.getElementById('txItemQcode').value;
+            const qtyTx = parseInt(document.getElementById('txQuantity').value);
+            const pic = document.getElementById('txPic').value.trim();
+            const inputPrice = parseFloat(document.getElementById('txUnitPrice').value);
+            const inputLocator = document.getElementById('txLocator').value.trim();
+            const reason = document.getElementById('txReason').value.trim();
+
+            const itemIndex = inventory.findIndex(i => i.qcode === qcode);
+            if (itemIndex === -1) {
+                showToast('Pilih item barang terlebih dahulu!', 'error');
+                return;
+            }
+
+            const item = inventory[itemIndex];
+
+            if (txType === 'KELUAR' && qtyTx > item.quantity) {
+                showToast(`Stok tidak cukup! Stok tersedia: ${item.quantity}`, 'error');
+                return;
+            }
+
+            let newQty = item.quantity;
+            let finalPrice = item.price || 0;
+            let finalLocator = item.locator;
+
+            if (txType === 'MASUK') {
+                newQty += qtyTx;
+                if (!isNaN(inputPrice)) finalPrice = inputPrice;
+                if (inputLocator) finalLocator = inputLocator;
+            } else {
+                newQty -= qtyTx;
+                if (reason) finalLocator = reason;
+            }
+
+            const timestampStr = getCurrentFormattedTimestamp();
+
+            inventory[itemIndex].quantity = newQty;
+            inventory[itemIndex].price = finalPrice;
+            inventory[itemIndex].locator = txType === 'MASUK' ? finalLocator : item.locator;
+            inventory[itemIndex].lastUpdated = timestampStr;
+
+            const logEntry = {
+                id: 'TX-' + Math.floor(1000 + Math.random() * 9000),
+                type: txType,
+                qcode: item.qcode,
+                description: item.description,
+                qty: qtyTx,
+                price: finalPrice,
+                locator: txType === 'MASUK' ? finalLocator : (reason || item.locator),
+                pic: pic,
+                image: item.image,
+                time: timestampStr
+            };
+
+            activityLogs.unshift(logEntry);
+            saveToLocalStorage();
+            saveLogsToLocalStorage();
+
+            populateDropdowns();
+            renderTable();
+            updateDashboardStats();
+            renderForecastTable();
+            renderBudgetingSummary();
+            renderHistoryLogs();
+            document.getElementById('transactionForm').reset();
+            document.getElementById('txItemInfo').classList.add('hidden');
+            toggleTxType('MASUK');
+
+            // Send real-time Telegram notification
+            const tgMsg = `⚡ <b>SINTER ELECTRIC INVENTORY NOTIF</b>\n` +
+                          `• Jenis: <b>${txType === 'MASUK' ? '🟢 BARANG MASUK' : '🔴 BARANG KELUAR'}</b>\n` +
+                          `• QCode: <b>${item.qcode}</b>\n` +
+                          `• Item: ${item.description}\n` +
+                          `• Jumlah: <b>${qtyTx} pcs</b>\n` +
+                          `• Sisa Stok: <b>${newQty} pcs</b>\n` +
+                          `• Lokasi/Tujuan: ${txType === 'MASUK' ? finalLocator : (reason || item.locator)}\n` +
+                          `• PIC: ${pic}\n` +
+                          `• Waktu: ${timestampStr}`;
+            sendTelegramMessage(tgMsg);
+
+            showToast(`Transaksi ${txType} berhasil dicatat & dikirim ke Telegram!`, 'success');
+        }
+
+        // ITEM MODAL & FORM
+        function generateRandomQCode() {
+            const rand = Math.floor(1000 + Math.random() * 9000);
+            document.getElementById('inputQcode').value = `QC-SE-${rand}`;
+        }
+
+        function previewImageFile(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    activeImageBase64 = e.target.result;
+                    document.getElementById('itemImagePreview').src = activeImageBase64;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function openModal(mode, index = -1) {
+            const modal = document.getElementById('itemModal');
+            const modalCard = document.getElementById('modalCard');
+            const form = document.getElementById('itemForm');
+            const title = document.getElementById('modalTitle');
+
+            form.reset();
+            activeImageBase64 = '';
+            document.getElementById('editIndex').value = index;
+            document.getElementById('itemImagePreview').src = 'https://placehold.co/100x100/e2e8f0/64748b?text=Item';
+
+            if (mode === 'edit' && index >= 0) {
+                const item = inventory[index];
+                title.innerHTML = `<i class="fa-solid fa-pen-to-square text-brand-500"></i> Edit Item: ${escapeHtml(item.qcode)}`;
+                document.getElementById('inputQcode').value = item.qcode;
+                document.getElementById('inputQcode').readOnly = true;
+                document.getElementById('inputDescription').value = item.description;
+                document.getElementById('inputCategory').value = item.category || '';
+                document.getElementById('inputPrice').value = item.price || 0;
+                document.getElementById('inputQuantity').value = item.quantity;
+                document.getElementById('inputLocator').value = item.locator;
+                if(item.image) {
+                    activeImageBase64 = item.image;
+                    document.getElementById('itemImagePreview').src = item.image;
+                }
+            } else {
+                title.innerHTML = `<i class="fa-solid fa-box text-brand-500"></i> Tambah Item Baru`;
+                document.getElementById('inputQcode').readOnly = false;
+                generateRandomQCode();
+            }
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modalCard.classList.remove('scale-95');
+                modalCard.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('itemModal');
+            const modalCard = document.getElementById('modalCard');
+            modalCard.classList.remove('scale-100');
+            modalCard.classList.add('scale-95');
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 200);
+        }
+
+        function saveItem(event) {
+            event.preventDefault();
+            const index = parseInt(document.getElementById('editIndex').value);
+            const qcode = document.getElementById('inputQcode').value.trim().toUpperCase();
+            const description = document.getElementById('inputDescription').value.trim();
+            const category = document.getElementById('inputCategory').value.trim() || 'Electrical';
+            const price = parseFloat(document.getElementById('inputPrice').value) || 0;
+            const quantity = parseInt(document.getElementById('inputQuantity').value);
+            const locator = document.getElementById('inputLocator').value.trim();
+            const timestamp = getCurrentFormattedTimestamp();
+            const image = activeImageBase64 || (index >= 0 ? inventory[index].image : 'https://placehold.co/100x100/e2e8f0/64748b?text=Item');
+
+            if (index === -1) {
+                if (inventory.some(item => item.qcode === qcode)) {
+                    showToast(`QCode "${qcode}" sudah terdaftar!`, 'error');
+                    return;
+                }
+                inventory.push({ qcode, description, category, price, quantity, locator, image, lastUpdated: timestamp });
+                showToast(`Item ${qcode} berhasil ditambahkan!`, 'success');
+            } else {
+                const old = inventory[index];
+                inventory[index] = { ...old, description, category, price, quantity, locator, image, lastUpdated: timestamp };
+                showToast(`Item ${qcode} berhasil diperbarui!`, 'success');
+            }
+
+            saveToLocalStorage();
+            populateDropdowns();
+            renderTable();
+            updateDashboardStats();
+            renderForecastTable();
+            closeModal();
+        }
+
+        function deleteItem(index) {
+            const item = inventory[index];
+            if (window.confirm(`Hapus item ${item.qcode} dari master inventory?`)) {
+                inventory.splice(index, 1);
+                saveToLocalStorage();
+                populateDropdowns();
+                renderTable();
+                updateDashboardStats();
+                renderForecastTable();
+                showToast('Item berhasil dihapus.', 'info');
+            }
+        }
+
+        function confirmResetData() {
+            if (window.confirm('Reset seluruh data inventaris dan log ke sample awal industrial?')) {
+                inventory = [...initialInventory];
+                activityLogs = [...initialLogs];
+                saveToLocalStorage();
+                saveLogsToLocalStorage();
+                populateDropdowns();
+                renderTable();
+                updateDashboardStats();
+                renderForecastTable();
+                renderBudgetingSummary();
+                renderHistoryLogs();
+                showToast('Data di-reset ke sample default.', 'info');
+            }
+        }
+
+        function clearHistory() {
+            if (window.confirm('Bersihkan seluruh riwayat log aktivitas transaksi?')) {
+                activityLogs = [];
+                saveLogsToLocalStorage();
+                renderHistoryLogs();
+                updateDashboardStats();
+                renderBudgetingSummary();
+                showToast('Riwayat log dibersihkan.', 'info');
+            }
+        }
+
+        function populateDropdowns() {
+            // Category filter
+            const catDropdown = document.getElementById('categoryFilter');
+            const currentCat = catDropdown.value;
+            catDropdown.innerHTML = '<option value="">Semua Kategori</option>';
+            const categories = [...new Set(inventory.map(item => item.category))].sort();
+            categories.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.innerText = cat;
+                if (cat === currentCat) opt.selected = true;
+                catDropdown.appendChild(opt);
+            });
+
+            // Locator filter
+            const locDropdown = document.getElementById('locatorFilter');
+            const currentLoc = locDropdown.value;
+            locDropdown.innerHTML = '<option value="">Semua Locator</option>';
+            const locators = [...new Set(inventory.map(item => item.locator))].sort();
+            locators.forEach(loc => {
+                const opt = document.createElement('option');
+                opt.value = loc;
+                opt.innerText = loc;
+                if (loc === currentLoc) opt.selected = true;
+                locDropdown.appendChild(opt);
+            });
+
+            populateTransactionDropdown();
+        }
+
+        function filterData() {
+            renderTable();
+        }
+
+        function sortTable(columnKey) {
+            if (currentSortColumn === columnKey) {
+                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSortColumn = columnKey;
+                currentSortDirection = 'asc';
+            }
+
+            inventory.sort((a, b) => {
+                let valA = a[columnKey];
+                let valB = b[columnKey];
+                if (typeof valA === 'string') valA = valA.toLowerCase();
+                if (typeof valB === 'string') valB = valB.toLowerCase();
+                if (valA < valB) return currentSortDirection === 'asc' ? -1 : 1;
+                if (valA > valB) return currentSortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            renderTable();
+        }
+
+        function exportToCSV() {
+            if (inventory.length === 0) {
+                showToast('Tidak ada data inventaris!', 'error');
+                return;
+            }
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "QCode,Item Description,Category,Unit Price,Quantity,Total Value,Locator,Image URL,Last Updated\n";
+            inventory.forEach(i => {
+                const total = i.quantity * (i.price || 0);
+                csvContent += `"${i.qcode}","${i.description.replace(/"/g,'""')}","${i.category||''}",${i.price||0},${i.quantity},${total},"${i.locator}","${i.image||''}","${i.lastUpdated||''}"\n`;
+            });
+            const link = document.createElement("a");
+            link.setAttribute("href", encodeURI(csvContent));
+            link.setAttribute("download", `SinterElectric_Inventory_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('Export CSV berhasil!', 'success');
+        }
+
+        function importCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const lines = e.target.result.split('\n');
+                let count = 0;
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+                    const cols = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+                    if (cols && cols.length >= 5) {
+                        const qcode = cols[0].replace(/"/g,'').trim();
+                        const description = cols[1].replace(/"/g,'').trim();
+                        const category = cols[2] ? cols[2].replace(/"/g,'').trim() : 'Electrical';
+                        const price = parseFloat(cols[3].replace(/"/g,'')) || 0;
+                        const quantity = parseInt(cols[4].replace(/"/g,'')) || 0;
+                        const locator = cols[6] ? cols[6].replace(/"/g,'').trim() : 'Warehouse';
+                        const image = cols[7] ? cols[7].replace(/"/g,'').trim() : 'https://placehold.co/100x100/e2e8f0/64748b?text=Item';
+                        const lastUpdated = getCurrentFormattedTimestamp();
+
+                        const idx = inventory.findIndex(item => item.qcode === qcode);
+                        if (idx >= 0) {
+                            inventory[idx] = { qcode, description, category, price, quantity, locator, image, lastUpdated };
+                        } else {
+                            inventory.push({ qcode, description, category, price, quantity, locator, image, lastUpdated });
+                        }
+                        count++;
+                    }
+                }
+                saveToLocalStorage();
+                populateDropdowns();
+                renderTable();
+                updateDashboardStats();
+                renderForecastTable();
+                showToast(`Import ${count} item berhasil!`, 'success');
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        function formatIDR(val) {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);
+        }
+
+        function getCurrentFormattedTimestamp() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            const h = String(now.getHours()).padStart(2, '0');
+            const min = String(now.getMinutes()).padStart(2, '0');
+            return `${y}-${m}-${d} ${h}:${min}`;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>"']/g, function(m) {
+                return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' }[m];
+            });
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            let bg = 'bg-slate-800 text-white';
+            let icon = 'fa-circle-info';
+            if (type === 'success') { bg = 'bg-brand-600 text-white'; icon = 'fa-circle-check'; }
+            else if (type === 'error') { bg = 'bg-red-600 text-white'; icon = 'fa-triangle-exclamation'; }
+
+            toast.className = `pointer-events-auto flex items-center space-x-2 px-4 py-2.5 rounded-lg shadow-lg text-xs font-medium ${bg} transform transition-all duration-300 translate-y-2 opacity-0`;
+            toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${escapeHtml(message)}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
